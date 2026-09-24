@@ -45,5 +45,8 @@ class GameState:
 
         return True
 
+    def can_forfeit(self):
+        return self.hints_used >= self.max_hints
+
     def reveal_all(self):
         self.revealed = [True] * self.length

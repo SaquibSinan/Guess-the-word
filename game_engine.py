@@ -73,7 +73,7 @@ class GameEngine:
         if not self.state.clue_available():
             return {
                 "status": "unavailable",
-                "message": "A clue is not available yet."
+                "message": "A clue is not available."
             }
 
         unrevealed_positions = [
@@ -100,6 +100,11 @@ class GameEngine:
         }
 
     def forfeit(self):
+        if not self.state.can_forfeit():
+            return {
+            "status": "unavailable",
+            "message": "Forfeit is not available yet."
+            }
         self.state.reveal_all()
         self.state.forfeited = True
 
