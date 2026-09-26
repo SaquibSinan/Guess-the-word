@@ -1,7 +1,7 @@
 import csv
 
 class WordValidator:
-    def __init__(self,filename="Guess-the-word/words.csv"):
+    def __init__(self,filename="words.csv"):
         self.filename=filename
         self.valid_words=self.load_words()
     def load_words(self):

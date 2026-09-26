@@ -24,9 +24,10 @@ class GameEngine:
 
             return {
                 "status": "won",
-                "correct_position": list(range(self.state.length)),
+                "correct_position": list(range(1,self.state.length+1)),
                 "wrong_position": [],
-                "not_present": []
+                "not_present": [],
+                "Total Attempts":self.state.total_attempts
             }
 
         correct_position = []
@@ -37,26 +38,23 @@ class GameEngine:
 
         for i in range(self.state.length):
             if guess[i] == self.state.word[i]:
-                correct_position.append(i)
+                correct_position.append(i+1)
                 self.state.revealed[i] = True
                 remaining_letters[i] = None
 
         for i in range(self.state.length):
-            if i in correct_position:
+            if (i+1) in correct_position:
                 continue
 
             if guess[i] in remaining_letters:
-                wrong_position.append(i)
+                wrong_position.append(i+1)
 
                 letter_index = remaining_letters.index(guess[i])
                 remaining_letters[letter_index] = None
             else:
-                not_present.append(i)
-
-        if correct_position:
-            self.state.incorrect_attempts = 0
-        else:
-            self.state.incorrect_attempts += 1
+                not_present.append(i+1)
+        
+        self.state.incorrect_attempts += 1
 
         return {
             "status": "wrong",
@@ -95,7 +93,7 @@ class GameEngine:
 
         return {
             "status": "hint",
-            "position": position,
+            "position": position+1,
             "letter": self.state.word[position]
         }
 
