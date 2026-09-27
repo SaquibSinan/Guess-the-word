@@ -2,7 +2,8 @@ import random
 
 
 class GameEngine:
-    def __init__(self, game_state, validator):
+
+    def _init_(self, game_state, validator):
         self.state = game_state
         self.validator = validator
 
@@ -23,9 +24,10 @@ class GameEngine:
 
             return {
                 "status": "won",
-                "correct_position": list(range(self.state.length)),
+                "correct_position": list(range(1,self.state.length+1)),
                 "wrong_position": [],
-                "not_present": []
+                "not_present": [],
+                "Total Attempts":self.state.total_attempts
             }
 
         correct_position = []
@@ -36,37 +38,23 @@ class GameEngine:
 
         for i in range(self.state.length):
             if guess[i] == self.state.word[i]:
-                correct_position.append(i)
+                correct_position.append(i+1)
                 self.state.revealed[i] = True
                 remaining_letters[i] = None
 
         for i in range(self.state.length):
-            if i in correct_position:
+            if (i+1) in correct_position:
                 continue
 
             if guess[i] in remaining_letters:
-                wrong_position.append(i)
+                wrong_position.append(i+1)
 
                 letter_index = remaining_letters.index(guess[i])
                 remaining_letters[letter_index] = None
             else:
-                not_present.append(i)
-
-
-        if correct_position:
-            self.state.incorrect_attempts = 0
-        else:
-            self.state.incorrect_attempts += 1
-
-        if self.state.revealed_count() == self.state.length:
-            self.state.won = True
-
-            return {
-                "status": "won",
-                "correct_position": correct_position,
-                "wrong_position": wrong_position,
-                "not_present": not_present
-            }
+                not_present.append(i+1)
+        
+        self.state.incorrect_attempts += 1
 
         return {
             "status": "wrong",
@@ -79,16 +67,11 @@ class GameEngine:
         return self.state.clue_available()
 
     def give_clue(self):
-        if self.state.won or self.state.forfeited:
-            return {
-                "status": "unavailable",
-                "message": "The round has already ended."
-            }
 
         if not self.state.clue_available():
             return {
                 "status": "unavailable",
-                "message": "A clue is not available yet."
+                "message": "A clue is not available."
             }
 
         unrevealed_positions = [
@@ -98,45 +81,28 @@ class GameEngine:
         ]
 
         if not unrevealed_positions:
-            self.state.won = True
-
-            return {
-                "status": "won",
-                "message": "All letters have already been revealed."
-            }
-
-        if not self.state.use_hint():
             return {
                 "status": "unavailable",
-                "message": "No hint is available."
+                "message": "All letters have already been revealed."
             }
 
         position = random.choice(unrevealed_positions)
 
+        self.state.use_hint()
         self.state.revealed[position] = True
-
-        if self.state.revealed_count() == self.state.length:
-            self.state.won = True
-
-            return {
-                "status": "won",
-                "position": position,
-                "letter": self.state.word[position]
-            }
 
         return {
             "status": "hint",
-            "position": position,
+            "position": position+1,
             "letter": self.state.word[position]
         }
 
     def forfeit(self):
-        if self.state.won or self.state.forfeited:
+        if not self.state.can_forfeit():
             return {
-                "status": "unavailable",
-                "message": "The round has already ended."
+            "status": "unavailable",
+            "message": "Forfeit is not available yet."
             }
-
         self.state.reveal_all()
         self.state.forfeited = True
 
