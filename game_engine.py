@@ -52,10 +52,21 @@ class GameEngine:
             else:
                 not_present.append(i)
 
+
         if correct_position:
             self.state.incorrect_attempts = 0
         else:
             self.state.incorrect_attempts += 1
+
+        if self.state.revealed_count() == self.state.length:
+            self.state.won = True
+
+            return {
+                "status": "won",
+                "correct_position": correct_position,
+                "wrong_position": wrong_position,
+                "not_present": not_present
+            }
 
         return {
             "status": "wrong",
@@ -68,6 +79,12 @@ class GameEngine:
         return self.state.clue_available()
 
     def give_clue(self):
+        if self.state.won or self.state.forfeited:
+            return {
+                "status": "unavailable",
+                "message": "The round has already ended."
+            }
+
         if not self.state.clue_available():
             return {
                 "status": "unavailable",
@@ -81,8 +98,10 @@ class GameEngine:
         ]
 
         if not unrevealed_positions:
+            self.state.won = True
+
             return {
-                "status": "unavailable",
+                "status": "won",
                 "message": "All letters have already been revealed."
             }
 
@@ -96,6 +115,15 @@ class GameEngine:
 
         self.state.revealed[position] = True
 
+        if self.state.revealed_count() == self.state.length:
+            self.state.won = True
+
+            return {
+                "status": "won",
+                "position": position,
+                "letter": self.state.word[position]
+            }
+
         return {
             "status": "hint",
             "position": position,
@@ -103,6 +131,12 @@ class GameEngine:
         }
 
     def forfeit(self):
+        if self.state.won or self.state.forfeited:
+            return {
+                "status": "unavailable",
+                "message": "The round has already ended."
+            }
+
         self.state.reveal_all()
         self.state.forfeited = True
 
