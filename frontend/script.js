@@ -572,7 +572,7 @@ function showFinalResult(data) {
     else {
 
         document.getElementById("final-title").textContent =
-            "CONGRATS!";
+            "CONGRATULATIONS!";
 
     }
 

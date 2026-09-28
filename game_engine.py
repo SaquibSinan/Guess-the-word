@@ -3,7 +3,7 @@ import random
 
 class GameEngine:
 
-    def _init_(self, game_state, validator):
+    def __init__(self, game_state, validator):
         self.state = game_state
         self.validator = validator
 
