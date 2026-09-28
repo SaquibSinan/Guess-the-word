@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Guess-the-Word</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main id="home-screen" class="screen active">
+
+        <h1 class="game-title">GUESS-THE-WORD</h1>
+
+        <section class="progression">
+
+            <p>
+                Highest Level:
+                <span id="player-level">1</span>
+            </p>
+
+            <p>
+                Points:
+                <span id="player-points">0</span>
+            </p>
+
+        </section>
+
+        <h2 class="choose-level">Choose Your Level</h2>
+
+        <section class="level-container" id="level-container">
+
+            <div class="level-card" data-level="1">
+                <h3>LEVEL 1</h3>
+                <p>Easy</p>
+            </div>
+
+            <div class="level-card" data-level="2">
+                <h3>LEVEL 2</h3>
+                <p>Normal</p>
+            </div>
+
+            <div class="level-card" data-level="3">
+                <h3>LEVEL 3</h3>
+                <p>Intermediate</p>
+            </div>
+
+            <div class="level-card" data-level="4">
+                <h3>LEVEL 4</h3>
+                <p>Advanced</p>
+            </div>
+
+            <div class="level-card" data-level="5">
+                <h3>LEVEL 5</h3>
+                <p>Expert</p>
+            </div>
+
+            <div class="level-card" data-level="6">
+                <h3>LEVEL 6</h3>
+                <p>Master</p>
+            </div>
+
+            <div class="level-card" data-level="7">
+                <h3>LEVEL 7</h3>
+                <p>Legend</p>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <main id="game-screen" class="screen">
+
+        <section class="game-header">
+
+            <h2 id="game-level">LEVEL 1</h2>
+
+            <p>
+                Word Length:
+                <span id="word-length">0</span>
+            </p>
+
+        </section>
+
+
+        <section class="word-board" id="word-board">
+            <!-- Revealed letters will appear here -->
+        </section>
+
+
+        <section class="guess-section">
+
+            <input
+                type="text"
+                id="guess-input"
+                maxlength="30"
+                autocomplete="off"
+                placeholder="Enter your guess"
+            >
+
+            <button id="guess-button">
+                GUESS
+            </button>
+
+        </section>
+
+
+        <section class="attempt-result" id="attempt-result">
+
+            <p id="result-message"></p>
+
+            <div id="correct-position"></div>
+            <div id="wrong-position"></div>
+            <div id="not-present"></div>
+
+        </section>
+
+
+        <section class="game-actions">
+
+            <div id="clue-area"></div>
+
+            <div id="forfeit-area"></div>
+
+        </section>
+
+    </main>
+
+
+
+    <main id="result-screen" class="screen">
+
+        <section class="result-board">
+
+            <h2 id="final-title">CONGRATS!</h2>
+
+            <div class="final-results">
+
+                <p>
+                    Word:
+                    <span id="final-word"></span>
+                </p>
+
+                <p>
+                    Attempts:
+                    <span id="final-attempts"></span>
+                </p>
+
+                <p>
+                    Hints Used:
+                    <span id="final-hints"></span>
+                </p>
+
+                <p>
+                    Points:
+                    <span id="final-points"></span>
+                </p>
+
+            </div>
+
+            <div class="result-actions">
+
+                <button id="play-again-button">
+                    PLAY AGAIN
+                </button>
+
+                <button id="home-button">
+                    HOME
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <div id="message-box" class="message-box">
+        <p id="message-text"></p>
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

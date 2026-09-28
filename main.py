@@ -1,3 +1,8 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from uuid import uuid4
+
 from word_manager import WordManager
 from word_validator import WordValidator
 from game_state import GameState
@@ -5,59 +10,311 @@ from game_engine import GameEngine
 from offline_scoring import OfflineScoring
 from offline_progress import OfflineProgress
 
-def StartGame(progress,selected_level):
-    if not progress.can_play(selected_level):
-        print("This Level is Locked")
-        return
-    word_manager=WordManager()
-    validator=WordValidator()
-    word_data=word_manager.get_random_word(selected_level)
-    game_state=GameState(word_data,selected_level)
-    game_engine=GameEngine(game_state,validator)
-    return game_engine
 
-def main():
-    progress = OfflineProgress()
-    print("Welcome to Guess-the-Word")
-    selected_level=int(input("Enter Level: "))
-    game_engine=StartGame(progress,selected_level)
-    if game_engine is None:
-        return
-    while not game_engine.state.won and not game_engine.state.forfeited:
-        print("Word Length:", game_engine.state.length)
-        guess=input("Enter Your Guess: ")
-        result=game_engine.make_guess(guess)
-        print(result)
+app = FastAPI()
 
-        if game_engine.state.won or game_engine.state.forfeited:
-            break
 
-        if result["status"]=="invalid":
-            continue
-        if game_engine.clue_available():
-            use_clue=input("Do you want to use a clue? (y/n): ")
-            if use_clue.lower()=="y":
-                clue=game_engine.give_clue()
-                print(clue)
-                continue
-            elif use_clue.lower()=="n":
-                game_engine.state.incorrect_attempts=0
-        if game_engine.state.hints_used>=game_engine.state.max_hints and game_engine.state.incorrect_attempts>=5:
-            use_forfeit=input("Do you want to forfeit?(y/n): ")
-            if use_forfeit.lower()=="y":
-                result=game_engine.forfeit()
-                print(result)
-                break
-            elif use_forfeit.lower()=="n":
-                game_engine.state.incorrect_attempts=0
+word_manager = WordManager()
+validator = WordValidator()
 
-    scoring=OfflineScoring(game_engine.state.level)
-    points=scoring.calculate_points(game_engine.state)
-    progress.add_points(points)
 
-    print("Points Achieved:",points)
-    print("Total Points:",progress.points)
-    print("Highest Unlocked Level:",progress.level)
+sessions = {}
 
-if __name__=="__main__":
-    main()
+
+class StartGameRequest(BaseModel):
+    level: int
+
+
+class GuessRequest(BaseModel):
+    guess: str
+
+
+def get_session(session_id):
+
+    if session_id not in sessions:
+        raise HTTPException(
+            status_code=404,
+            detail="Game session not found."
+        )
+
+    return sessions[session_id]
+
+
+def get_word_display(game_state):
+
+    display = []
+
+    for i in range(game_state.length):
+
+        if game_state.revealed[i]:
+            display.append(game_state.word[i])
+
+        else:
+            display.append(None)
+
+    return display
+
+
+@app.get("/api/progress")
+def get_progress():
+
+    # For now this uses one offline player.
+    # Later this can be connected to user accounts.
+
+    progress = sessions.get("player_progress")
+
+    if progress is None:
+
+        progress = OfflineProgress()
+
+        sessions["player_progress"] = progress
+
+    return {
+        "level": progress.level,
+        "points": progress.points
+    }
+
+
+@app.post("/api/start-game")
+def start_game(request: StartGameRequest):
+
+    progress = sessions.get("player_progress")
+
+    if progress is None:
+
+        progress = OfflineProgress()
+
+        sessions["player_progress"] = progress
+
+
+
+    if not progress.can_play(request.level):
+
+        raise HTTPException(
+            status_code=403,
+            detail="This Level is Locked"
+        )
+
+
+    if request.level < 1 or request.level > 7:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid level."
+        )
+
+    word_data = word_manager.get_random_word(
+        request.level
+    )
+
+
+    game_state = GameState(
+        word_data,
+        request.level
+    )
+
+
+    game_engine = GameEngine(
+        game_state,
+        validator
+    )
+
+
+    session_id = str(uuid4())
+
+
+    sessions[session_id] = {
+        "game_engine": game_engine,
+        "progress": progress
+    }
+
+
+    return {
+        "session_id": session_id,
+        "level": request.level,
+        "length": game_state.length,
+        "revealed": get_word_display(game_state),
+        "hints_used": game_state.hints_used,
+        "max_hints": game_state.max_hints,
+        "total_attempts": game_state.total_attempts
+    }
+
+
+@app.post("/api/guess")
+def make_guess(request: GuessRequest):
+
+    active_sessions = [
+        value
+        for key, value in sessions.items()
+        if isinstance(value, dict)
+        and "game_engine" in value
+    ]
+
+
+    if not active_sessions:
+
+        raise HTTPException(
+            status_code=404,
+            detail="No active game."
+        )
+
+
+    session = active_sessions[-1]
+
+    game_engine = session["game_engine"]
+
+    result = game_engine.make_guess(
+        request.guess
+    )
+
+
+    if result["status"] == "invalid":
+
+        return result
+
+
+    game_state = game_engine.state
+
+
+    response = {
+        "status": result["status"],
+        "correct_position": result.get(
+            "correct_position",
+            []
+        ),
+        "wrong_position": result.get(
+            "wrong_position",
+            []
+        ),
+        "not_present": result.get(
+            "not_present",
+            []
+        ),
+        "revealed": get_word_display(game_state),
+        "total_attempts": game_state.total_attempts,
+        "hints_used": game_state.hints_used,
+        "max_hints": game_state.max_hints
+    }
+
+
+    if game_state.won:
+
+        scoring = OfflineScoring(
+            game_state.level
+        )
+
+        points = scoring.calculate_points(
+            game_state
+        )
+
+        session["progress"].add_points(points)
+
+        response["word"] = game_state.word
+        response["points"] = points
+
+
+    return response
+
+
+@app.post("/api/clue")
+def give_clue():
+
+    active_sessions = [
+        value
+        for key, value in sessions.items()
+        if isinstance(value, dict)
+        and "game_engine" in value
+    ]
+
+
+    if not active_sessions:
+
+        raise HTTPException(
+            status_code=404,
+            detail="No active game."
+        )
+
+
+    session = active_sessions[-1]
+
+    game_engine = session["game_engine"]
+
+    result = game_engine.give_clue()
+
+
+    if result["status"] != "hint":
+
+        return result
+
+
+    game_state = game_engine.state
+
+
+    return {
+        "status": "hint",
+        "position": result["position"],
+        "letter": result["letter"],
+        "revealed": get_word_display(game_state),
+        "hints_used": game_state.hints_used,
+        "max_hints": game_state.max_hints,
+        "total_attempts": game_state.total_attempts
+    }
+
+
+@app.post("/api/forfeit")
+def forfeit_game():
+
+    active_sessions = [
+        value
+        for key, value in sessions.items()
+        if isinstance(value, dict)
+        and "game_engine" in value
+    ]
+
+
+    if not active_sessions:
+
+        raise HTTPException(
+            status_code=404,
+            detail="No active game."
+        )
+
+
+    session = active_sessions[-1]
+
+    game_engine = session["game_engine"]
+
+    result = game_engine.forfeit()
+
+
+    if result["status"] != "forfeited":
+
+        return result
+
+
+    game_state = game_engine.state
+
+
+    scoring = OfflineScoring(
+        game_state.level
+    )
+
+    points = scoring.calculate_points(
+        game_state
+    )
+
+    session["progress"].add_points(points)
+
+
+    return {
+        "status": "forfeited",
+        "word": result["word"],
+        "points": points,
+        "total_attempts": game_state.total_attempts,
+        "hints_used": game_state.hints_used
+    }
+app.mount(
+    "/",
+    StaticFiles(directory="frontend", html=True),
+    name="frontend"
+)
