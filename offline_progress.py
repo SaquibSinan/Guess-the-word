@@ -1,10 +1,12 @@
 class OfflineProgress:
     def __init__(self):
-        self.points=0
-        self.level=1
-    def add_points(self,points):
-        self.points+=points
+        self.points = 0
+        self.level = 1
+
+    def add_points(self, points):
+        self.points += points
         self.update_level()
+
     def update_level(self):
         if self.points>=5500 and self.level<7:
             self.level=7
