@@ -180,16 +180,12 @@ def make_guess(request: GuessRequest):
 
     response = {
         "status": result["status"],
-        "correct_position": result.get(
-            "correct_position",
+        "wrong_positioned_letters": result.get(
+            "wrong_positioned_letters",
             []
         ),
-        "wrong_position": result.get(
-            "wrong_position",
-            []
-        ),
-        "not_present": result.get(
-            "not_present",
+        "not_present_letters": result.get(
+            "not_present_letters",
             []
         ),
         "revealed": get_word_display(game_state),
@@ -230,7 +226,6 @@ def give_clue():
         and "game_engine" in value
     ]
 
-
     if not active_sessions:
 
         raise HTTPException(
@@ -238,26 +233,43 @@ def give_clue():
             detail="No active game."
         )
 
-
     session = active_sessions[-1]
 
     game_engine = session["game_engine"]
 
     result = game_engine.give_clue()
 
-
-    if result["status"] != "hint":
-
+    if result["status"] == "unavailable":
         return result
-
 
     game_state = game_engine.state
 
+    if result["status"] == "won":
+
+        scoring = OfflineScoring(
+            game_state.level
+        )
+
+        points = scoring.calculate_points(
+            game_state
+        )
+
+        session["progress"].add_points(points)
+
+        return {
+            "status": "won",
+            "word": game_state.word,
+            "points": points,
+            "revealed": get_word_display(game_state),
+            "hints_used": game_state.hints_used,
+            "max_hints": game_state.max_hints,
+            "total_attempts": game_state.total_attempts,
+            "clue_available": game_state.clue_available(),
+            "forfeit_available": game_state.can_forfeit()
+        }
 
     return {
         "status": "hint",
-        "position": result["position"],
-        "letter": result["letter"],
         "revealed": get_word_display(game_state),
         "hints_used": game_state.hints_used,
         "max_hints": game_state.max_hints,

@@ -166,6 +166,8 @@ async function startGame(level) {
         currentGame.maxHints = data.max_hints;
 
         currentGame.totalAttempts = data.total_attempts;
+        document.getElementById("total-attempts").textContent = data.total_attempts;
+        
         currentGame.clueAvailable = data.clue_available;
         currentGame.forfeitAvailable = data.forfeit_available;
 
@@ -289,6 +291,7 @@ async function makeGuess() {
 
 
         currentGame.totalAttempts = data.total_attempts;
+        document.getElementById("total-attempts").textContent = data.total_attempts;
         currentGame.clueAvailable = data.clue_available;
         currentGame.forfeitAvailable = data.forfeit_available;
         currentGame.revealed = data.revealed;
@@ -329,8 +332,6 @@ function displayGuessResult(data) {
 
     const message = document.getElementById("result-message");
 
-    const correct = document.getElementById("correct-position");
-
     const wrong = document.getElementById("wrong-position");
 
     const notPresent = document.getElementById("not-present");
@@ -339,32 +340,27 @@ function displayGuessResult(data) {
     message.textContent = "Guess Result";
 
 
-    correct.textContent =
-        "Correct Position: " +
-        formatPositions(data.correct_position);
-
-
     wrong.textContent =
         "Wrong Position: " +
-        formatPositions(data.wrong_position);
+        formatLetters(data.wrong_positioned_letters);
 
 
     notPresent.textContent =
         "Not Present: " +
-        formatPositions(data.not_present);
+        formatLetters(data.not_present_letters);
 
 }
 
 
-function formatPositions(positions) {
+function formatLetters(letters) {
 
-    if (!positions || positions.length === 0) {
+    if (!letters || letters.length === 0) {
 
         return "None";
 
     }
 
-    return positions.join(", ");
+    return letters.join(", ");
 
 }
 
@@ -372,8 +368,6 @@ function formatPositions(positions) {
 function clearGuessResult() {
 
     document.getElementById("result-message").textContent = "";
-
-    document.getElementById("correct-position").textContent = "";
 
     document.getElementById("wrong-position").textContent = "";
 
@@ -427,124 +421,150 @@ function updateGameActions() {
 }
 
 
+function showConfirmation(message, confirmText) {
+
+    const confirmationArea =
+        document.getElementById("confirmation-area");
+
+    confirmationArea.innerHTML = "";
+
+    const confirmationMessage =
+        document.createElement("p");
+
+    confirmationMessage.textContent = message;
+
+    const confirmButton =
+        document.createElement("button");
+
+    confirmButton.textContent = confirmText;
+
+    const cancelButton =
+        document.createElement("button");
+
+    cancelButton.textContent = "NO";
+
+    confirmationArea.appendChild(confirmationMessage);
+    confirmationArea.appendChild(confirmButton);
+    confirmationArea.appendChild(cancelButton);
+
+    return new Promise(function (resolve) {
+
+        confirmButton.addEventListener("click", function () {
+
+            confirmationArea.innerHTML = "";
+
+            resolve(true);
+        });
+
+        cancelButton.addEventListener("click", function () {
+
+            confirmationArea.innerHTML = "";
+
+            resolve(false);
+        });
+
+    });
+}
+
 async function useClue() {
 
-    const confirmed = confirm(
-        "Do you want to use a clue?"
+    const confirmed = await showConfirmation(
+        "Do you want to use a clue?",
+        "YES"
     );
 
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
+    if (!confirmed) return;
 
     try {
 
         const response = await fetch("/api/clue", {
-
             method: "POST"
-
         });
-
 
         if (!response.ok) {
 
             throw new Error("A clue is not available.");
-
         }
-
 
         const data = await response.json();
 
+        if (data.status === "won") {
 
-        if (data.status !== "hint") {
+            currentGame.hintsUsed = data.hints_used;
+            currentGame.maxHints = data.max_hints;
+            currentGame.totalAttempts = data.total_attempts;
+            currentGame.clueAvailable = data.clue_available;
+            currentGame.forfeitAvailable = data.forfeit_available;
+            currentGame.revealed = data.revealed;
 
-            showMessage(data.message);
+            displayWord(data.revealed);
+            showFinalResult(data);
 
             return;
-
         }
 
-        currentGame.hintsUsed = data.hints_used;
-        currentGame.clueAvailable = data.clue_available;
-        currentGame.forfeitAvailable = data.forfeit_available;
-        currentGame.revealed = data.revealed;
+        if (data.status === "hint") {
 
-        displayWord(data.revealed);
+            currentGame.hintsUsed = data.hints_used;
+            currentGame.maxHints = data.max_hints;
+            currentGame.totalAttempts = data.total_attempts;
+            currentGame.clueAvailable = data.clue_available;
+            currentGame.forfeitAvailable = data.forfeit_available;
+            currentGame.revealed = data.revealed;
 
-        updateGameActions();
+            displayWord(data.revealed);
+            updateGameActions();
 
+            showMessage("A clue has been given.");
+
+            return;
+        }
 
         showMessage(
-            "Clue revealed position " + data.position + "."
+            data.message || "A clue is not available."
         );
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         showMessage(error.message);
-
     }
-
 }
 
 
 async function forfeitGame() {
 
-    const confirmed = confirm(
-        "Do you want to forfeit this game?"
+    const confirmed = await showConfirmation(
+        "Do you want to forfeit this game?",
+        "YES"
     );
 
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
+    if (!confirmed) return;
 
     try {
 
         const response = await fetch("/api/forfeit", {
-
             method: "POST"
-
         });
-
 
         if (!response.ok) {
 
             throw new Error("Forfeit is not available yet.");
-
         }
 
-
         const data = await response.json();
-
 
         if (data.status !== "forfeited") {
 
             showMessage(data.message);
-
             return;
-
         }
-
 
         showFinalResult(data);
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         showMessage(error.message);
-
     }
-
 }
 
 

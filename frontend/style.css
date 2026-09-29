@@ -129,7 +129,8 @@ body {
 #clue-button,
 #forfeit-button,
 #play-again-button,
-#home-button {
+#home-button,
+#confirmation-area button {
 
     border: none;
 
@@ -151,7 +152,8 @@ body {
 #clue-button:hover,
 #forfeit-button:hover,
 #play-again-button:hover,
-#home-button:hover {
+#home-button:hover,
+#confirmation-area button:hover {
 
     opacity: 0.85;
 }
@@ -287,7 +289,6 @@ body {
     font-weight: bold;
 }
 
-#correct-position,
 #wrong-position,
 #not-present {
 
@@ -422,6 +423,18 @@ body {
     border-radius: 10px;
 }
 
+.confirmation-area {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.confirmation-area p {
+    margin-bottom: 10px;
+}
+
+.confirmation-area button {
+    margin: 0 5px;
+}
 
 @media (max-width: 600px) {
 
