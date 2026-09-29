@@ -136,7 +136,9 @@ def start_game(request: StartGameRequest):
         "revealed": get_word_display(game_state),
         "hints_used": game_state.hints_used,
         "max_hints": game_state.max_hints,
-        "total_attempts": game_state.total_attempts
+        "total_attempts": game_state.total_attempts,
+        "clue_available": game_state.clue_available(),
+        "forfeit_available": game_state.can_forfeit()
     }
 
 
@@ -192,6 +194,8 @@ def make_guess(request: GuessRequest):
         ),
         "revealed": get_word_display(game_state),
         "total_attempts": game_state.total_attempts,
+        "clue_available": game_state.clue_available(),
+        "forfeit_available": game_state.can_forfeit(),
         "hints_used": game_state.hints_used,
         "max_hints": game_state.max_hints
     }
@@ -257,7 +261,9 @@ def give_clue():
         "revealed": get_word_display(game_state),
         "hints_used": game_state.hints_used,
         "max_hints": game_state.max_hints,
-        "total_attempts": game_state.total_attempts
+        "total_attempts": game_state.total_attempts,
+        "clue_available": game_state.clue_available(),
+        "forfeit_available": game_state.can_forfeit()
     }
 
 

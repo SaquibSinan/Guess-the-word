@@ -8,7 +8,9 @@ let currentGame = {
     revealed: [],
     hintsUsed: 0,
     maxHints: 0,
-    totalAttempts: 0
+    totalAttempts: 0,
+    clueAvailable: false,
+    forfeitAvailable: false
 };
 
 
@@ -164,6 +166,8 @@ async function startGame(level) {
         currentGame.maxHints = data.max_hints;
 
         currentGame.totalAttempts = data.total_attempts;
+        currentGame.clueAvailable = data.clue_available;
+        currentGame.forfeitAvailable = data.forfeit_available;
 
 
         document.getElementById("game-level").textContent =
@@ -285,9 +289,9 @@ async function makeGuess() {
 
 
         currentGame.totalAttempts = data.total_attempts;
-
+        currentGame.clueAvailable = data.clue_available;
+        currentGame.forfeitAvailable = data.forfeit_available;
         currentGame.revealed = data.revealed;
-
 
         if (data.status === "won") {
 
@@ -390,9 +394,8 @@ function updateGameActions() {
     forfeitArea.innerHTML = "";
 
 
-    if (
-        currentGame.hintsUsed < currentGame.maxHints
-    ) {
+    if (currentGame.clueAvailable) {
+    
 
         const clueButton = document.createElement("button");
 
@@ -407,9 +410,7 @@ function updateGameActions() {
     }
 
 
-    if (
-        currentGame.hintsUsed >= currentGame.maxHints
-    ) {
+    if (currentGame.forfeitAvailable) {
 
         const forfeitButton = document.createElement("button");
 
@@ -467,11 +468,10 @@ async function useClue() {
 
         }
 
-
         currentGame.hintsUsed = data.hints_used;
-
+        currentGame.clueAvailable = data.clue_available;
+        currentGame.forfeitAvailable = data.forfeit_available;
         currentGame.revealed = data.revealed;
-
 
         displayWord(data.revealed);
 

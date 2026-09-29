@@ -24,43 +24,37 @@ class GameEngine:
 
             return {
                 "status": "won",
-                "correct_position": list(range(1,self.state.length+1)),
-                "wrong_position": [],
-                "not_present": [],
+                "wrong_positioned_letters": [],
+                "not_present_letters": [],
                 "Total Attempts":self.state.total_attempts
             }
 
-        correct_position = []
-        wrong_position = []
-        not_present = []
+        wrong_positioned_letters = set()
+        not_present_letters = set()
 
         remaining_letters = list(self.state.word)
 
         for i in range(self.state.length):
             if guess[i] == self.state.word[i]:
-                correct_position.append(i+1)
                 self.state.revealed[i] = True
                 remaining_letters[i] = None
 
         for i in range(self.state.length):
-            if (i+1) in correct_position:
+            if guess [i]==self.state.word[i]:
                 continue
 
             if guess[i] in remaining_letters:
-                wrong_position.append(i+1)
+                wrong_positioned_letters.add(guess[i])
 
-                letter_index = remaining_letters.index(guess[i])
-                remaining_letters[letter_index] = None
             else:
-                not_present.append(i+1)
+                not_present_letters.add(guess[i])
         
         self.state.incorrect_attempts += 1
 
         return {
             "status": "wrong",
-            "correct_position": correct_position,
-            "wrong_position": wrong_position,
-            "not_present": not_present
+            "wrong_positioned_letters": list(wrong_positioned_letters),
+            "not_present_letters": list(not_present_letters)
         }
 
     def clue_available(self):
@@ -90,11 +84,14 @@ class GameEngine:
 
         self.state.use_hint()
         self.state.revealed[position] = True
+        if all(self.state.revealed):
+            self.state.won=True
+            return{
+                "status": "won"
+            }
 
         return {
             "status": "hint",
-            "position": position+1,
-            "letter": self.state.word[position]
         }
 
     def forfeit(self):
