@@ -1,18 +1,26 @@
 import csv
 from wordfreq import iter_wordlist,zipf_frequency
+from english_words import get_english_words_set
 
 MIN_LENGTH=3
 MAX_LENGTH=12
 MIN_FRQ=1
 
+EnglishWords = get_english_words_set(
+    ["web2", "gcide"],
+    lower=True
+)
+
 AllWords=iter_wordlist("en")
 Words=set()
 
 for word in AllWords:
-    word.lower()
+    word=word.lower().strip()
     if not word.isalpha():
         continue
     if len(word)<MIN_LENGTH or len(word)>MAX_LENGTH:
+        continue
+    if word not in EnglishWords:
         continue
     frequency=zipf_frequency(word,"en")
     if frequency<MIN_FRQ:
