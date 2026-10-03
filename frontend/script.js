@@ -130,6 +130,8 @@ async function startGame(level) {
 
     selectedLevel = level;
 
+    document.getElementById("guess-input").value = "";
+
     try {
 
         const response = await fetch("/api/start-game", {
